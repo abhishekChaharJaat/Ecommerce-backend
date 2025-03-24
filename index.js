@@ -11,11 +11,15 @@ connectDataBase();
 // Enable CORS for all routes
 app.use(
   cors({
-    origin: "http://localhost:3000", // Allow requests from your React app
-    methods: ["GET", "POST", "PUT", "DELETE"], // Allowed HTTP methods
-    credentials: true, // If you need to send cookies or auth headers
+    origin: [
+      "https://abhishekshopshare.netlify.app",
+      "http://localhost:5000" 
+    ],
+    methods: ["GET", "POST", "PUT", "DELETE"],  // Allowed HTTP methods
+    credentials: true,  // Allow cookies or auth headers
   })
 );
+
 
 // Middleware
 app.use(express.json());
