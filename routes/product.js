@@ -130,14 +130,17 @@ router.get("/fetch-cart-items", requireSignin, async (req, res) => {
     // Fetch cart items for the authenticated user
     const cartItems = await cartModal
       .find({ userId: req.user._id }) // Still using userId to filter the cart items
-      .populate("productId", "name description price thumbnail") // Populate product details
-      .exec();
+      .populate("productId", "name description price thumbnail"); // Populate product details
 
     // Prepare cartItems response excluding sensitive user information
     const responseCartItems = cartItems.map((item) => {
-      // Remove userId from the cart item before sending it to the client
-      const { userId, ...itemData } = item.toObject();
-      return itemData;
+      const { userId, productId, ...itemData } = item.toObject();
+
+      // Rename productId to productDetails in the response
+      return {
+        ...itemData,
+        productInfo: productId, // Renaming productId to productDetails
+      };
     });
 
     // Send success response with the cart items
@@ -178,8 +181,8 @@ router.delete(
       // Send success response
       res.status(200).json({
         success: true,
-        message: "Cart item removed successfully",
-        id: productId,
+        message: "Item removed",
+        id: cartItem._id,
       });
     } catch (error) {
       console.error("Error deleting cart item:", error);

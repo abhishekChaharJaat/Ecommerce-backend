@@ -29,6 +29,10 @@ const cartSchema = new mongoose.Schema(
       required: true,
       default: 1, // Default quantity
     },
+    status: {
+      type: String,
+      default: "cart",
+    },
   },
   { timestamps: true } // This will automatically add createdAt and updatedAt fields
 );
