@@ -3,9 +3,11 @@ import userModal from "../modals/userModal.js"; // Unused in these routes, but k
 import productModal from "../modals/productModal.js"; // Model for products
 import { requireSignin, isAdmin } from "../middlewares/authMiddleware.js";
 import { uploadImage } from "../middlewares/multer.js";
+import cartModal from "../modals/cartModal.js";
+
 const router = express.Router();
 
-// POST route to add a product
+// ========================== Add a product ================================ //
 router.post(
   "/add-new-product",
   requireSignin,
@@ -47,7 +49,7 @@ router.post(
   }
 );
 
-// GET route to fetch all products
+// ==================== fetch all products =================================//
 router.get("/get-all-products", async (req, res) => {
   try {
     // Fetch all products from the database
@@ -68,5 +70,125 @@ router.get("/get-all-products", async (req, res) => {
     });
   }
 });
+
+// ==================== Add To Cart Route ============================== //
+router.post("/add-to-cart", requireSignin, async (req, res) => {
+  try {
+    const { productId, color, qty, size } = req.body;
+
+    // Ensure productId, color, and qty are provided
+    if (!productId || !color || !qty) {
+      return res.status(400).json({
+        success: false,
+        message: "Product ID, color, and quantity are required",
+      });
+    }
+    // Check if the product already exists in the cart for the user
+    const existingCartItem = await cartModal.findOne({
+      userId: req.user._id, // Assuming user ID is attached to req.user from requireSignin middleware
+      productId,
+    });
+    if (existingCartItem) {
+      // If the item already exists, update the quantity
+      existingCartItem.qty += qty; // You can adjust how the quantity is handled here
+      await existingCartItem.save();
+      return res.status(200).json({
+        success: true,
+        message: "Product quantity updated in cart",
+        cartItem: existingCartItem,
+      });
+    }
+
+    // If the product is not already in the cart, create a new cart item
+    const newCartItem = new cartModal({
+      userId: req.user._id,
+      productId,
+      color,
+      qty,
+    });
+
+    // Save the new cart item to the database
+    const savedCartItem = await newCartItem.save();
+
+    // Send success response
+    res.status(201).json({
+      success: true,
+      message: "Product added to cart",
+      cartItem: savedCartItem,
+    });
+  } catch (error) {
+    console.error("Error adding product to cart:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while adding product to cart",
+    });
+  }
+});
+
+router.get("/fetch-cart-items", requireSignin, async (req, res) => {
+  try {
+    // Fetch cart items for the authenticated user
+    const cartItems = await cartModal
+      .find({ userId: req.user._id }) // Still using userId to filter the cart items
+      .populate("productId", "name description price thumbnail") // Populate product details
+      .exec();
+
+    // Prepare cartItems response excluding sensitive user information
+    const responseCartItems = cartItems.map((item) => {
+      // Remove userId from the cart item before sending it to the client
+      const { userId, ...itemData } = item.toObject();
+      return itemData;
+    });
+
+    // Send success response with the cart items
+    res.status(200).json({
+      success: true,
+      message: "Cart items retrieved successfully",
+      cartItems: responseCartItems,
+    });
+  } catch (error) {
+    console.error("Error fetching cart items:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while fetching cart items",
+    });
+  }
+});
+
+// ==================== Delete Cart Item Route ============================== //
+router.delete(
+  "/delete-cart-item/:productId",
+  requireSignin,
+  async (req, res) => {
+    try {
+      const { productId } = req.params; // Extract productId from URL params
+      // Find the cart item for the authenticated user and the specific productId
+      const cartItem = await cartModal.findOneAndDelete({
+        userId: req.user._id, // Ensure that the cart item belongs to the current user
+        productId: productId, // The product to be deleted
+      });
+
+      if (!cartItem) {
+        return res.status(404).json({
+          success: false,
+          message: "Cart item not found",
+        });
+      }
+
+      // Send success response
+      res.status(200).json({
+        success: true,
+        message: "Cart item removed successfully",
+        id: productId,
+      });
+    } catch (error) {
+      console.error("Error deleting cart item:", error);
+      res.status(500).json({
+        success: false,
+        message: "Server error while deleting cart item",
+      });
+    }
+  }
+);
 
 export default router;
