@@ -13,6 +13,7 @@ router.post(
   requireSignin,
   isAdmin,
   uploadImage.single("thumbnail"),
+  uploadImage.array("images", 3),
   async (req, res) => {
     try {
       // Extract product data from request body

@@ -53,7 +53,10 @@ const productSchema = new mongoose.Schema({
     type: String,
     default: "Brand name",
   },
-  images: { type: String },
+  images: {
+    type: [String], 
+    default: [], 
+  },
   thumbnail: {
     type: String,
     default: "URL for the product thumbnail",
