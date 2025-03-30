@@ -250,5 +250,47 @@ router.put("/change-cart-status", requireSignin, async (req, res) => {
 });
 
 
+// ==================== Fetch All Non-Cart Items (Admin Only) ============================== //
+router.get("/admin/ordered-items", requireSignin, isAdmin, async (req, res) => {
+  try {
+    // Fetch all cart items where the status is NOT equal to "cart"
+    const nonCartItems = await cartModal
+      .find({ status: { $ne: "cart" } })   // Fetch items with status not equal to "cart"
+      .populate("productId", "name description price thumbnail")  // Populate product details
+      .sort({ updatedAt: -1 });  // Sort by latest updated time
+
+    if (nonCartItems.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No non-cart items found",
+        cartItems: [],
+      });
+    }
+
+    // Prepare response cart items with user and product info
+    const responseCartItems = nonCartItems.map((item) => {
+      const { productId, userId, ...itemData } = item.toObject();
+
+      return {
+        ...itemData,
+        productInfo: productId,      // Rename productId to productInfo
+        userInfo: userId,            // Include user information
+      };
+    });
+
+    // Send success response
+    res.status(200).json({
+      success: true,
+      message: "Non-cart items retrieved successfully",
+      cartItems: responseCartItems,
+    });
+  } catch (error) {
+    console.error("Error fetching non-cart items:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while fetching non-cart items",
+    });
+  }
+});
 
 export default router;
