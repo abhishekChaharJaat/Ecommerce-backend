@@ -26,7 +26,6 @@ const cartSchema = new mongoose.Schema(
     },
     size: {
       type: String,
-      required: true,
       default: 1, // Default quantity
     },
     status: {

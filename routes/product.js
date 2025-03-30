@@ -13,7 +13,7 @@ router.post(
   requireSignin,
   isAdmin,
   uploadImage.single("thumbnail"),
-  uploadImage.array("images", 3),
+  uploadImage.array("images", 5),
   async (req, res) => {
     try {
       // Extract product data from request body
@@ -89,7 +89,7 @@ router.post("/add-to-cart", requireSignin, async (req, res) => {
       userId: req.user._id, // Assuming user ID is attached to req.user from requireSignin middleware
       productId,
     });
-    if (existingCartItem) {
+    if (existingCartItem && existingCartItem.status === "cart") {
       // If the item already exists, update the quantity
       existingCartItem.qty += qty; // You can adjust how the quantity is handled here
       await existingCartItem.save();
@@ -106,6 +106,7 @@ router.post("/add-to-cart", requireSignin, async (req, res) => {
       productId,
       color,
       qty,
+      size,
     });
 
     // Save the new cart item to the database
@@ -194,5 +195,60 @@ router.delete(
     }
   }
 );
+
+
+
+// ========================== Change Cart Item Status ================================ //
+
+router.put("/change-cart-status", requireSignin, async (req, res) => {
+  try {
+    const { cartItemIds, status } = req.body;
+
+    // Validate input
+    if (!cartItemIds || !status) {
+      return res.status(400).json({
+        success: false,
+        message: "Cart item IDs and status are required",
+      });
+    }
+
+    // Update the status and set the updated date
+    const updatedCartItems = await cartModal.updateMany(
+      { 
+        _id: { $in: cartItemIds },    // Filter by cart item IDs
+        userId: req.user._id          // Ensure they belong to the current user
+      },
+      { 
+        $set: { 
+          status,                     // Update the status
+          updatedAt: new Date()       // Set the current date as the last updated time
+        }
+      }
+    );
+
+    if (updatedCartItems.modifiedCount === 0) {
+      return res.status(404).json({
+        success: false,
+        message: "No matching cart items found or status unchanged",
+      });
+    }
+
+    // Send success response
+    res.status(200).json({
+      success: true,
+      message: "Cart item statuses updated successfully",
+      updatedCount: updatedCartItems.modifiedCount,
+    });
+
+  } catch (error) {
+    console.error("Error changing cart item status:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while updating cart item status",
+    });
+  }
+});
+
+
 
 export default router;
