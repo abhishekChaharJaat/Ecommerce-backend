@@ -196,8 +196,6 @@ router.delete(
   }
 );
 
-
-
 // ========================== Change Cart Item Status ================================ //
 
 router.put("/change-cart-status", requireSignin, async (req, res) => {
@@ -214,15 +212,14 @@ router.put("/change-cart-status", requireSignin, async (req, res) => {
 
     // Update the status and set the updated date
     const updatedCartItems = await cartModal.updateMany(
-      { 
-        _id: { $in: cartItemIds },    // Filter by cart item IDs
-        userId: req.user._id          // Ensure they belong to the current user
+      {
+        _id: { $in: cartItemIds }, // Filter by cart item IDs
       },
-      { 
-        $set: { 
-          status,                     // Update the status
-          updatedAt: new Date()       // Set the current date as the last updated time
-        }
+      {
+        $set: {
+          status, // Update the status
+          updatedAt: new Date(), // Set the current date as the last updated time
+        },
       }
     );
 
@@ -239,7 +236,6 @@ router.put("/change-cart-status", requireSignin, async (req, res) => {
       message: "Cart item statuses updated successfully",
       updatedCount: updatedCartItems.modifiedCount,
     });
-
   } catch (error) {
     console.error("Error changing cart item status:", error);
     res.status(500).json({
@@ -249,15 +245,14 @@ router.put("/change-cart-status", requireSignin, async (req, res) => {
   }
 });
 
-
 // ==================== Fetch All Non-Cart Items (Admin Only) ============================== //
 router.get("/admin/ordered-items", requireSignin, isAdmin, async (req, res) => {
   try {
     // Fetch all cart items where the status is NOT equal to "cart"
     const nonCartItems = await cartModal
-      .find({ status: { $ne: "cart" } })   // Fetch items with status not equal to "cart"
-      .populate("productId", "name description price thumbnail")  // Populate product details
-      .sort({ updatedAt: -1 });  // Sort by latest updated time
+      .find({ status: { $ne: "cart" } }) // Fetch items with status not equal to "cart"
+      .populate("productId", "name description price thumbnail") // Populate product details
+      .sort({ updatedAt: -1 }); // Sort by latest updated time
 
     if (nonCartItems.length === 0) {
       return res.status(404).json({
@@ -273,8 +268,8 @@ router.get("/admin/ordered-items", requireSignin, isAdmin, async (req, res) => {
 
       return {
         ...itemData,
-        productInfo: productId,      // Rename productId to productInfo
-        userInfo: userId,            // Include user information
+        productInfo: productId, // Rename productId to productInfo
+        userInfo: userId, // Include user information
       };
     });
 
