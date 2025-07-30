@@ -13,7 +13,9 @@ app.use(
   cors({
     origin: [
       "https://abhishekshopshare.netlify.app",
-      "http://localhost:5000" 
+      "http://localhost:5173",
+      "http://localhost:5000",
+      "http://localhost:3000"
     ],
     methods: ["GET", "POST", "PUT", "DELETE"],  // Allowed HTTP methods
     credentials: true,  // Allow cookies or auth headers
